@@ -1,31 +1,105 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  background-color: #fff; /* Nền trắng */
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  cursor: crosshair;
+  position: relative;
+}
+
 #info {
-	background:#34333103;
-	opacity:0.8;
-	position: center;
-	top:1px;
-	right:5px;
-	width:280px;
-	color:#14f366;
-	border-radius: 5px;
-	z-index:10
-  text-align: center; /* Căn giữa văn bản */
-	
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #14f366;
+  text-align: center;
+  max-width: 90vw;
+  z-index: 20;
+  animation: floatText 6s ease-in-out infinite;
+  user-select: none;
+  letter-spacing: 1.2px;
 }
 
-#info p {
-   padding:0 10px;
+.highlight {
+  color: #b0ee06;
+  font-weight: bold;
+  margin: 10px 0;
 }
 
-#info a{ color:#f2ea0a; }
-
-/* basic styles for black background and crosshair cursor */
-body {
-  background: url('C:\Users\Admin\Downloads\IMG_20221016_203313_305.jpg') no-repeat center center fixed;
-  background-size: cover;
-	
+#info a {
+  color: #f2ea0a;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-canvas {
-	cursor: crosshair;
-	display: block;
+/* Lời chúc hiệu ứng */
+@keyframes floatText {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(30px);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+}
+
+/* Canvas full màn hình */
+#canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+/* Popup đếm ngược */
+#popup {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  font-size: 24px;
+  color: #fff;
+  user-select: none;
+}
+
+#popup.hidden {
+  display: none;
+}
+
+#popup-content {
+  background: #222;
+  padding: 30px 40px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 0 15px #0f0;
+}
+
+#cancel-btn {
+  margin-top: 20px;
+  background: #f24;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+#cancel-btn:hover {
+  background: #d12;
 }
