@@ -1,107 +1,132 @@
-// --- PHÁO HOA CANVAS ---
-(() => {
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
-  }
-  window.addEventListener('resize', resize);
-  resize();
+// Pháo hoa - đơn giản demo (bạn có thể thay bằng hiệu ứng phức tạp hơn)
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-  class Firework {
-    constructor() {
-      this.x = Math.random() * W;
-      this.y = H;
-      this.targetY = Math.random() * H/2;
-      this.speed = 5 + Math.random() * 3;
-      this.radius = 2;
-      this.exploded = false;
-      this.particles = [];
-    }
-    update() {
-      if (!this.exploded) {
-        this.y -= this.speed;
-        if (this.y <= this.targetY) {
-          this.exploded = true;
-          for(let i=0; i<50; i++) {
-            this.particles.push(new Particle(this.x, this.y));
-          }
-        }
-      }
-      this.particles.forEach(p => p.update());
-      this.particles = this.particles.filter(p => !p.dead);
-    }
-    draw() {
-      if (!this.exploded) {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-      }
-      this.particles.forEach(p => p.draw());
-    }
-    done() {
-      return this.exploded && this.particles.length === 0;
+let fireworks = [];
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+class Firework {
+  constructor(sx, sy, tx, ty) {
+    this.x = sx;
+    this.y = sy;
+    this.sx = sx;
+    this.sy = sy;
+    this.tx = tx;
+    this.ty = ty;
+    this.distanceToTarget = Math.hypot(tx - sx, ty - sy);
+    this.distanceTraveled = 0;
+    this.speed = 5;
+    this.angle = Math.atan2(ty - sy, tx - sx);
+    this.brightness = Math.random() * 0.5 + 0.5;
+    this.targetReached = false;
+  }
+  update() {
+    const vx = Math.cos(this.angle) * this.speed;
+    const vy = Math.sin(this.angle) * this.speed;
+    this.x += vx;
+    this.y += vy;
+    this.distanceTraveled = Math.hypot(this.x - this.sx, this.y - this.sy);
+    if (this.distanceTraveled >= this.distanceToTarget) {
+      this.targetReached = true;
+      this.createParticles();
     }
   }
+  draw() {
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x - Math.cos(this.angle) * 10, this.y - Math.sin(this.angle) * 10);
+    ctx.strokeStyle = `rgba(255, 255, 255, ${this.brightness})`;
+    ctx.stroke();
+  }
+  createParticles() {
+    const particleCount = 30;
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle(this.tx, this.ty));
+    }
+  }
+}
 
-  class Particle {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.radius = 2 + Math.random() * 2;
-      this.speedX = (Math.random() - 0.5) * 10;
-      this.speedY = (Math.random() - 0.5) * 10;
-      this.gravity = 0.2;
-      this.life = 50 + Math.random()*20;
-      this.dead = false;
-      this.color = `hsl(${Math.random()*360}, 100%, 60%)`;
-    }
-    update() {
-      this.speedY += this.gravity;
-      this.x += this.speedX;
-      this.y += this.speedY;
-      this.life--;
-      if (this.life <= 0) this.dead = true;
-    }
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-      ctx.fillStyle = this.color;
-      ctx.fill();
+class Particle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.speed = Math.random() * 5 + 2;
+    this.angle = Math.random() * Math.PI * 2;
+    this.gravity = 0.05;
+    this.friction = 0.95;
+    this.brightness = Math.random() * 0.5 + 0.5;
+    this.alpha = 1;
+    this.decay = Math.random() * 0.015 + 0.01;
+  }
+  update() {
+    this.speed *= this.friction;
+    this.x += Math.cos(this.angle) * this.speed;
+    this.y += Math.sin(this.angle) * this.speed + this.gravity;
+    this.alpha -= this.decay;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 150, 0, ${this.alpha * this.brightness})`;
+    ctx.fill();
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    fireworks[i].draw();
+    fireworks[i].update();
+    if (fireworks[i].targetReached) {
+      fireworks.splice(i, 1);
     }
   }
 
-  let fireworks = [];
-
-  function loop() {
-    ctx.clearRect(0, 0, W, H);
-    if (Math.random() < 0.05) fireworks.push(new Firework());
-    fireworks.forEach(fw => {
-      fw.update();
-      fw.draw();
-    });
-    fireworks = fireworks.filter(fw => !fw.done());
-    requestAnimationFrame(loop);
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].draw();
+    particles[i].update();
+    if (particles[i].alpha <= 0) {
+      particles.splice(i, 1);
+    }
   }
-  loop();
-})();
 
-// --- HIỆU ỨNG BÔNG HOA NỞ TRƯỚC KHI ĐỔI TRANG ---
-document.querySelectorAll('#info a').forEach(link => {
-  link.addEventListener('click', function(event) {
-    event.preventDefault();
+  requestAnimationFrame(loop);
+}
 
-    const flower = document.getElementById('flower-bloom');
-    flower.classList.add('active');
+loop();
+
+// Hoa nở khi bấm vào link rồi chuyển trang
+document.addEventListener('DOMContentLoaded', () => {
+  const flowerLink = document.getElementById('flowerLink');
+
+  flowerLink.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    const flower = document.createElement('div');
+    flower.id = 'flowerEffect';
+    document.body.appendChild(flower);
 
     setTimeout(() => {
-      window.open(this.href, '_blank'); // mở link mới
-      flower.classList.remove('active');
-    }, 700);
+      window.location.href = flowerLink.href;
+    }, 1000);
+  });
+
+  // Khi click bất kỳ vị trí nào trên body thì tạo pháo hoa
+  document.body.addEventListener('click', (e) => {
+    // Ngăn nhấn link bắn pháo hoa 2 lần
+    if(e.target === flowerLink) return;
+
+    const x = e.clientX;
+    const y = e.clientY;
+    const fw = new Firework(canvas.width / 2, canvas.height, x, y);
+    fireworks.push(fw);
   });
 });
